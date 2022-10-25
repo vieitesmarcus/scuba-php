@@ -127,3 +127,25 @@ function crud_delete($dados)
     return flush_crud($jsonUsers);
     
 }
+
+function crud_update_password($email, $password)
+{
+    $users = load_crud();
+
+    if($users){
+        foreach($users as $user){
+            if($user->email === $email){
+                $user->password = $password;
+                // echo '<pre>';
+                //     var_dump($user,$users);
+                // echo '</pre>';exit();
+                break;
+            }
+        }
+    }
+
+    $usersJson = json_encode($users);
+
+    return flush_crud($usersJson);
+    
+}

@@ -53,6 +53,10 @@ function do_login()
             render_view('login', ['success' => "Email autênticado com sucesso"]);
             exit();
             break;
+        case 'tokenSucesso':
+            render_view('login', ['success' => "Senha alterada com sucesso"]);
+            exit();
+            break;
         case 'register':
             render_view('login', ['success' => "Cadastrado com Sucesso"]);
             exit();
@@ -95,7 +99,7 @@ function do_home()
 {
     render_view('home', [
         'name' => $_SESSION["user"]->name,
-        'email'=> $_SESSION["user"]->email
+        'email' => $_SESSION["user"]->email
     ]);
 }
 
@@ -138,15 +142,16 @@ function do_forget_password()
         );
         if (!crud_verifica_email($email['person']['email'])) {
             $message['email_error'] = 'Email inexistente';
-            render_view('forget_password', $message);exit();
+            render_view('forget_password', $message);
+            exit();
         }
 
         $time = new DateTime('now', new DateTimeZone('America/Sao_Paulo'));
         // echo date('d-m-y', $time);
-        $urlBody = APP_URL.'?page=change-password&token=';
-        $urlBody .= ssl_crypt($email['person']['email'].':'.$time->format(trim('d.m.Y:H.i.s')));
+        $urlBody = APP_URL . '?page=change-password&token=';
+        $urlBody .= ssl_crypt($email['person']['email'] . ':' . $time->format(trim('d.m.Y:H.i.s')));
         $body = "Olá, <br/> Bem-vindo à ScubaPHP! <br> Clique no link para recuperar sua senha. <br>  <a href='$urlBody'>Recuperar Senha</a>";
-        if(!sendEmail($email['person']['email'],'Recupeção de senha',$body, "Recuperação de Senha")){
+        if (!sendEmail($email['person']['email'], 'Recupeção de senha', $body, "Recuperação de Senha")) {
             $message['erro'] = 'email não enviado';
         }
         $message['success'] = 'email enviado com sucesso';
@@ -156,29 +161,69 @@ function do_forget_password()
 
 function do_change_password()
 {
-    if(!($_SERVER["REQUEST_METHOD"] === 'GET' && isset($_GET['token']) === true)){ // verifica se o method passa é 'GET' e se possui uma chamada 'token'
-        render_view('forget_password',['erro'=>'Token Inválido']);exit();
-    }
-    $token = filter_input(INPUT_GET, 'token', FILTER_SANITIZE_URL);
-    $tokenDecrypt = ssl_decrypt($token);
-    if(!$tokenDecrypt){
-        render_view('forget_password', ['erro' => 'token inválido']);exit();
-    }
-    $tokenDecrypt = explode(":", $tokenDecrypt);
+$messages = [];
+    if ($_SERVER["REQUEST_METHOD"] === 'GET' && isset($_GET['token']) === true) { // verifica se o method passado é 'GET' e se possui uma chave 'token'
+        $token = filter_input(INPUT_GET, 'token', FILTER_SANITIZE_URL);
 
-    //valida se existe o usuario no banco de dados
-    $userExiste = crud_verifica_email($tokenDecrypt[0]);
-    $tempo = date($tokenDecrypt[1].$tokenDecrypt[2]);
-    $tempo = new DateTime($tempo, new DateTimeZone('America/Sao_Paulo'));
+        $tokenDecrypt = ssl_decrypt($token); //descriptografa o ssl passado na chave token 
 
-    $verificarTempoToken = new DateTime('now', new DateTimeZone('America/Sao_Paulo'));
-    
-    $dataToken = $tempo->diff($verificarTempoToken);
-    if($dataToken->d >= 1){
-        render_view('forget_password', ['erro' => 'token expirado']);exit();
+        if (!$tokenDecrypt) { //verifica se o token existe 
+            render_view('forget_password', ['erro' => 'token inválido']);
+            exit();
+        }
+        $tokenDecrypt = explode(":", $tokenDecrypt); //cria um array com o email, data do dia do token e horário
+
+        //valida se existe o usuario no banco de dados
+        $userExiste = crud_verifica_email($tokenDecrypt[0]); // verifica se o email passado no token existe no banco de dados
+        if (!$userExiste) {
+            render_view('forget_password', ['erro' => 'usuário inexistente']);
+            exit();
+        }
+        $tempo = date($tokenDecrypt[1].$tokenDecrypt[2]);
+        // $tempo = date('25-10-2022 08:44:00'); // teste para verificar horario
+        $tempo = new DateTime($tempo, new DateTimeZone('America/Sao_Paulo'));
+
+        $verificarTempoToken = new DateTime('now', new DateTimeZone('America/Sao_Paulo'));
+
+        $dataToken = $tempo->diff($verificarTempoToken);
+        // echo '<pre>';
+        //     var_dump($dataToken);
+        // echo '</pre>';exit();
+        if ($dataToken->d >= 1 || $dataToken->h >= 1 || $dataToken->i >= 15) {
+            render_view('forget_password', ['erro' => 'token expirado']);
+            exit();
+        }
+        $_SESSION['email'] = $tokenDecrypt[0];
+        render_view('change_password');
+        exit();
     }
-    
-    render_view('change_password');
+
+    if ($_POST) {
+        $user = filter_input_array(
+            INPUT_POST,
+            [
+                'person' =>
+                [
+                    'filter' => FILTER_SANITIZE_FULL_SPECIAL_CHARS,
+                    'flags' => FILTER_REQUIRE_ARRAY
+                ]
+            ]
+        );
+        $user['person']['email'] = isset($_SESSION['email']) ? $_SESSION['email'] : false;
+
+        if($user['person']['password'] !== $user['person']['password-confirm']){
+            $messages['password-confirm'] ='password precisa ser igual ao de cima';
+            render_view('change_password', $messages);exit();
+        }
+        
+        crud_update_password($user['person']['email'], md5($user['person']['password']));
+        session_destroy();
+        header("Location:/?page=login&from=tokenSucesso", true, 302);
+        exit();
+        // render_view('change_password', $messages);exit();
+        
+    }
+    render_view('forget_password', $messages);
 }
 
 function do_not_found()
