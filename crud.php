@@ -86,7 +86,10 @@ function crud_restore_user($email, $password)
 }
 function load_crud() //BUSCA OS USUARIOS
 {
-    $json = file_get_contents(DATA_LOCATION);
+    $json = file_exists(DATA_LOCATION) ? file_get_contents(DATA_LOCATION) : "";
+    if(!$json){
+        return false;
+    }
     return json_decode($json);
 }
 

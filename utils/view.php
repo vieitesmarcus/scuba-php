@@ -20,7 +20,7 @@ function render_view($template, $data = [])
             $data[$item] = ""; 
         }
     }
-    $page = $template . '.view';
+    $page = $template . '.html';
     $content = file_get_contents(VIEW_FOLDER . $page);
     
 

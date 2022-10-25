@@ -11,7 +11,7 @@ function do_register()
             header('location:/?page=register', true, 302);
             exit();
         }
-        require_once __DIR__ . '/../crud.php';
+        // require_once __DIR__ . '/../crud.php';
         $validar = crud_create($user); // valida o usuario e se retornar true é porque ocorreu tudo corretamente no cadastro senão retorna um array com os erros 
         unset($user['person']['password-confirm']);
         if (is_array($validar)) {
@@ -27,7 +27,7 @@ function do_register()
 
         $body = "Olá, <br/> Bem-vindo à ScubaPHP! <br> Confirme seu endereço de email. <br>  <a href='$urlBody'>Confirmar Email</a>";
 
-        sendEmail($user['person']['email'],"Confirmação de Email", $body ,"AltBody");
+        sendEmail($user['person']['email'], "Confirmação de Email", $body, "AltBody");
         header('location:?page=login&from=register', true, 302);
         exit();
     }
@@ -93,7 +93,10 @@ function do_validation()
 
 function do_home()
 {
-    render_view('home');
+    render_view('home', [
+        'name' => $_SESSION["user"]->name,
+        'email'=> $_SESSION["user"]->email
+    ]);
 }
 
 function do_logout()
@@ -119,31 +122,62 @@ function do_delete_account()
 function do_forget_password()
 {
 
-$message = [];
+    $message = [];
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $email = filter_input_array(
             INPUT_POST,
             [
-                'person' => 
+                'person' =>
                 [
                     'filter' => FILTER_VALIDATE_EMAIL,
                     'flags'  => FILTER_REQUIRE_ARRAY,
                 ]
             ]
         );
-        if(!crud_verifica_email($email['person']['email'])){
-            $message['erro'] ='Email inexistente';
+        if (!crud_verifica_email($email['person']['email'])) {
+            $message['email_error'] = 'Email inexistente';
+            render_view('forget_password', $message);exit();
         }
 
-
+        $time = new DateTime('now', new DateTimeZone('America/Sao_Paulo'));
+        // echo date('d-m-y', $time);
+        $urlBody = APP_URL.'?page=change-password&token=';
+        $urlBody .= ssl_crypt($email['person']['email'].':'.$time->format(trim('d.m.Y:H.i.s')));
+        $body = "Olá, <br/> Bem-vindo à ScubaPHP! <br> Clique no link para recuperar sua senha. <br>  <a href='$urlBody'>Recuperar Senha</a>";
+        if(!sendEmail($email['person']['email'],'Recupeção de senha',$body, "Recuperação de Senha")){
+            $message['erro'] = 'email não enviado';
+        }
+        $message['success'] = 'email enviado com sucesso';
     }
     render_view('forget_password', $message);
 }
 
 function do_change_password()
 {
+    if(!($_SERVER["REQUEST_METHOD"] === 'GET' && isset($_GET['token']) === true)){ // verifica se o method passa é 'GET' e se possui uma chamada 'token'
+        render_view('forget_password',['erro'=>'Token Inválido']);exit();
+    }
+    $token = filter_input(INPUT_GET, 'token', FILTER_SANITIZE_URL);
+    $tokenDecrypt = ssl_decrypt($token);
+    if(!$tokenDecrypt){
+        render_view('forget_password', ['erro' => 'token inválido']);exit();
+    }
+    $tokenDecrypt = explode(":", $tokenDecrypt);
+
+    //valida se existe o usuario no banco de dados
+    $userExiste = crud_verifica_email($tokenDecrypt[0]);
+    $tempo = date($tokenDecrypt[1].$tokenDecrypt[2]);
+    $tempo = new DateTime($tempo, new DateTimeZone('America/Sao_Paulo'));
+
+    $verificarTempoToken = new DateTime('now', new DateTimeZone('America/Sao_Paulo'));
+    
+    $dataToken = $tempo->diff($verificarTempoToken);
+    if($dataToken->d >= 1){
+        render_view('forget_password', ['erro' => 'token expirado']);exit();
+    }
+    
     render_view('change_password');
 }
 
