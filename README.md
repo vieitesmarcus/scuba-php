@@ -10,8 +10,9 @@ Rápida descrição do objetivo de fazer esse projeto
 | :fire: Desafio     | https://github.com/me42th/ScubaPHP
 
 <!-- Inserir imagem com a #vitrinedev ao final do link -->
-![](https://via.placeholder.com/1200x500.png?text=imagem+lindona+do+meu+projeto#vitrinedev)
+![](https://github.com/vieitesmarcus/scuba-php/blob/master/scuba.png#vitrinedev)
 
 ## Detalhes do projeto
-
-Textos e imagens que descrevam seu projeto, suas conquistas, seus desafios, próximos passos, etc...
+foi um desafio em tanto em criar a criptografia em ssl, eu via que dava certo mas não entendia como.. kkk e eu gosto de entender.
+Um controller só para receber os requests e renderizar as views, vou refatorar ainda para diminuir o código.
+<!--Textos e imagens que descrevam seu projeto, suas conquistas, seus desafios, próximos passos, etc... -->
