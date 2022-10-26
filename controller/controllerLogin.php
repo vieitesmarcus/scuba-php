@@ -37,46 +37,44 @@ function do_register()
 
 function do_login()
 {
+    if (isset($_GET['from'])) {
 
-
-    // echo '<pre>';
-    // var_dump($_POST);
-    // echo '</pre>';exit();
-    // $url = filter_input(INPUT_GET,'from',FILTER_SANITIZE_URL);
-
-    switch (filter_input(INPUT_GET, 'from', FILTER_SANITIZE_URL)) {
-        case 'tokenErro':
-            render_view('login', ['erro' => "email não autênticado"]);
-            exit();
-            break;
-        case 'tokenSuccess':
-            render_view('login', ['success' => "Email autênticado com sucesso"]);
-            exit();
-            break;
-        case 'tokenSucesso':
-            render_view('login', ['success' => "Senha alterada com sucesso"]);
-            exit();
-            break;
-        case 'register':
-            render_view('login', ['success' => "Cadastrado com Sucesso"]);
-            exit();
-            break;
-        case 'login':
-            if ($_POST) {
-                $personArr = filter_input_array(INPUT_POST, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-                if (!authentication($personArr['person']['email'], $personArr['person']['password'])) {
-                    render_view('login', ['erro' => 'Login ou senha inválidos', 'email' => $personArr['person']['email']]);
-                    break;
+        switch (filter_input(INPUT_GET, 'from', FILTER_SANITIZE_URL)) {
+            case 'tokenErro':
+                render_view('login', ['erro' => "email não autênticado"]);
+                exit();
+                break;
+            case 'tokenSuccess':
+                render_view('login', ['success' => "Email autênticado com sucesso"]);
+                exit();
+                break;
+            case 'tokenSucesso':
+                render_view('login', ['success' => "Senha alterada com sucesso"]);
+                exit();
+                break;
+            case 'register':
+                render_view('login', ['success' => "Cadastrado com Sucesso"]);
+                exit();
+                break;
+            case 'login':
+                if ($_POST) {
+                    $personArr = filter_input_array(INPUT_POST, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+                    if (!authentication($personArr['person']['email'], $personArr['person']['password'])) {
+                        render_view('login', ['erro' => 'Login ou senha inválidos', 'email' => $personArr['person']['email']]);
+                        break;
+                    }
                 }
-            }
-            render_view('login');
-            exit();
-            break;
-        default:
-            render_view('login', ['success', "Sucesso"]);
-            exit();
-            break;
+                render_view('login');
+                exit();
+                break;
+            default:
+                render_view('login');
+                exit();
+                break;
+        }
     }
+    render_view('login');
+    exit();
 }
 
 function do_validation()
@@ -161,7 +159,7 @@ function do_forget_password()
 
 function do_change_password()
 {
-$messages = [];
+    $messages = [];
     if ($_SERVER["REQUEST_METHOD"] === 'GET' && isset($_GET['token']) === true) { // verifica se o method passado é 'GET' e se possui uma chave 'token'
         $token = filter_input(INPUT_GET, 'token', FILTER_SANITIZE_URL);
 
@@ -179,7 +177,7 @@ $messages = [];
             render_view('forget_password', ['erro' => 'usuário inexistente']);
             exit();
         }
-        $tempo = date($tokenDecrypt[1].$tokenDecrypt[2]);
+        $tempo = date($tokenDecrypt[1] . $tokenDecrypt[2]);
         // $tempo = date('25-10-2022 08:44:00'); // teste para verificar horario
         $tempo = new DateTime($tempo, new DateTimeZone('America/Sao_Paulo'));
 
@@ -211,17 +209,18 @@ $messages = [];
         );
         $user['person']['email'] = isset($_SESSION['email']) ? $_SESSION['email'] : false;
 
-        if($user['person']['password'] !== $user['person']['password-confirm']){
-            $messages['password-confirm'] ='password precisa ser igual ao de cima';
-            render_view('change_password', $messages);exit();
+        if ($user['person']['password'] !== $user['person']['password-confirm']) {
+            $messages['password-confirm'] = 'password precisa ser igual ao de cima';
+            render_view('change_password', $messages);
+            exit();
         }
-        
+
         crud_update_password($user['person']['email'], md5($user['person']['password']));
         session_destroy();
         header("Location:/?page=login&from=tokenSucesso", true, 302);
         exit();
         // render_view('change_password', $messages);exit();
-        
+
     }
     render_view('forget_password', $messages);
 }

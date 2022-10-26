@@ -19,4 +19,3 @@ function valida_create_user($user)
 
     return false;
 }
-
