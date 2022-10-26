@@ -10,7 +10,7 @@ Rápida descrição do objetivo de fazer esse projeto
 | :fire: Desafio     | https://github.com/me42th/ScubaPHP
 
 <!-- Inserir imagem com a #vitrinedev ao final do link -->
-![](https://github.com/vieitesmarcus/scuba-php/blob/master/scuba.png#vitrinedev)
+![image](https://github.com/vieitesmarcus/scuba-php/blob/master/scuba.png#vitrinedev)
 
 ## Detalhes do projeto
 foi um desafio em tanto em criar a criptografia em ssl, eu via que dava certo mas não entendia como.. kkk e eu gosto de entender.
